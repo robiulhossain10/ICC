@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ICC-DALAL | Premium</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.6/shaka-player.ui.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.6/controls.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --glass-bg: rgba(10, 10, 15, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --brand: #00e5ff;
+            --glow-color: rgba(0, 229, 255, 0.3);
+        }
+
+        body {
+            margin: 0; background: #000; font-family: 'Outfit', sans-serif;
+            color: white; height: 100vh; display: flex;
+            align-items: center; justify-content: center; overflow: hidden;
+        }
+
+        #ambient-layer {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 140vw; height: 140vh; z-index: -1;
+            background: radial-gradient(circle at center, var(--glow-color) 0%, #000 70%);
+            transition: background 2s ease; filter: blur(80px);
+        }
+
+        .glass-card {
+            width: 92%; max-width: 600px; background: var(--glass-bg);
+            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-border); border-radius: 28px;
+            padding: 20px; display: flex; flex-direction: column; gap: 15px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.9);
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-size: 26px; font-weight: 800; background: linear-gradient(to right, #fff, var(--brand)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .live-tag {
+            background: rgba(255, 0, 0, 0.15); color: #ff4d4d;
+            padding: 5px 12px; border-radius: 50px; font-size: 11px;
+            font-weight: 700; border: 1px solid rgba(255, 0, 0, 0.3);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .dot { width: 8px; height: 8px; background: #ff4d4d; border-radius: 50%; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        .player-box {
+            width: 100%; aspect-ratio: 16/9; background: #000;
+            border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .internal-footer {
+            text-align: center; font-size: 10px; color: rgba(255,255,255,0.4);
+            letter-spacing: 1px; text-transform: uppercase;
+        }
+        .internal-footer a { color: var(--brand); text-decoration: none; font-weight: 700; }
+
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            color: #fff; padding: 14px; border-radius: 14px;
+            font-weight: 600; cursor: pointer; transition: 0.3s;
+        }
+        .btn.active { background: #fff; color: #000; font-weight: 800; border-color: #fff; }
+
+        .shaka-play-button-container { display: flex !important; } 
+    </style>
+</head>
+<body>
+
+    <div id="ambient-layer"></div>
+
+    <div class="glass-card">
+        <div class="header">
+            <div class="brand">ICC-ROBIUL</div>
+            <div class="live-tag"><div class="dot"></div> LIVE</div>
+        </div>
+
+        <div class="player-box" data-shaka-player-container>
+            <video autoplay playsinline data-shaka-player id="video" style="width:100%;height:100%"></video>
+        </div>
+
+        <div class="internal-footer">
+            POWERED BY <a href="https://t.me/Arafat404" target="_blank">@Arafat404</a>
+        </div>
+
+        <div class="controls">
+            <button class="btn active" id="btn-1" onclick="loadMatch(1)">MATCH 01</button>
+            <button class="btn" id="btn-2" onclick="loadMatch(2)">MATCH 02</button>
+        </div>
+    </div>
+
+    <script>
+        const streams = {
+            1: { mpd: "https://a201aivottlinear-a.akamaihd.net/OTTB/lhr-nitro/live/dash/enc/dn7vupw4sj/out/v1/d7130f460d41486ea7e8e3eb45f0522f/cenc.mpd", keyId: "9c8743426487c9074b60b456dda93e4d", key: "643e4f68ec9e3309b7e1e61b95bec85d" },
+            2: { mpd: "https://a65live-pv-ta-amazon.akamaized.net/syd-nitro/live/clients/dash/enc/fclywfntvr/out/v1/e21d21ec21e34c7192049a44ee3de428/cenc.mpd?", keyId: "ed76c18710d621a87c89dedc7c13019f", key: "7241c82fe48525a9dc6be6d7bb86611f" }
+        };
+
+        async function init() {
+            const video = document.getElementById('video');
+            const ui = video['ui'];
+            const controls = ui.getControls();
+            const player = controls.getPlayer();
+            window.player = player;
+
+            ui.configure({
+                'controlPanelElements': ['play_pause', 'time_and_duration', 'spacer', 'mute', 'overflow_menu', 'fullscreen'],
+                'singleClickForPlayAndPause': true 
+            });
+
+            // --- PERSISTENT BACKGROUND LOADING CONFIG ---
+            player.configure({
+                streaming: {
+                    bufferingGoal: 30,           // Keeps 30s loaded in background
+                    rebufferingGoal: 2, 
+                    bufferBehind: 10,            // Keep 10s of past data for stability
+                    alwaysStreamText: true,
+                    lowLatencyMode: true,
+                    jumpLargeGaps: true
+                },
+                manifest: { dash: { ignoreMinBufferTime: true } }
+            });
+
+            // Attempt Unmuted Autoplay
+            video.muted = false; 
+            
+            loadMatch(1);
+
+            // Force play trigger
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("Unmuted autoplay blocked. Starting muted.");
+                    video.muted = true;
+                    video.play();
+                });
+            }
+
+            // Sync Ambient
+            setInterval(() => {
+                if (!video.paused) {
+                    const colors = ['rgba(0, 229, 255, 0.3)', 'rgba(173, 0, 255, 0.2)'];
+                    document.documentElement.style.setProperty('--glow-color', colors[Math.floor(Math.random() * colors.length)]);
+                }
+            }, 5000);
+        }
+
+        async function loadMatch(id) {
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+            const s = streams[id];
+            await window.player.unload();
+            window.player.configure({ drm: { clearKeys: { [s.keyId]: s.key } } });
+            await window.player.load(s.mpd);
+        }
+
+        document.addEventListener('shaka-ui-loaded', init);
+        document.addEventListener('DOMContentLoaded', () => shaka.polyfill.installAll());
+    </script>
+</body>
+</html>
