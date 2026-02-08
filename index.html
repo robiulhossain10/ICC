@@ -208,6 +208,46 @@
           padding: 20px 15px;
         }
       }
+
+      /* MARQUEE WRAPPER */
+      .marquee-wrapper {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.5); /* semi-transparent glass */
+        backdrop-filter: blur(6px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+        padding: 10px 0;
+        position: relative;
+      }
+
+      /* SCROLLING TEXT */
+      .marquee {
+        display: inline-block;
+        white-space: nowrap;
+        color: #00e5ff;
+        font-weight: 600;
+        font-size: 14px;
+        animation: marqueeAnim 15s linear infinite;
+        padding-left: 100%;
+      }
+
+      /* KEYFRAME ANIMATION */
+      @keyframes marqueeAnim {
+        0% {
+          transform: translateX(0%);
+        }
+        100% {
+          transform: translateX(-100%);
+        }
+      }
+
+      /* MOBILE ADJUSTMENT */
+      @media (max-width: 768px) {
+        .marquee {
+          font-size: 12px;
+        }
+      }
     </style>
   </head>
 
@@ -220,6 +260,11 @@
         <div>Live</div>
         <div>Sports</div>
         <div>Movies</div>
+      </div>
+    </div>
+    <div class="marquee-wrapper">
+      <div class="marquee">
+        আমাদের ওয়েবসাইটের কাজ বর্তমানে চলমান আছে, খুব শীঘ্রই আমরা লাইভে আসব।
       </div>
     </div>
 
